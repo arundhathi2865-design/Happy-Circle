@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auro Pizza Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0e0d0c;
+    --surface: #1a1916;
+    --surface2: #242220;
+    --border: rgba(255,220,120,0.12);
+    --accent: #f5a623;
+    --accent2: #e8471e;
+    --green: #4caf7d;
+    --red: #e85555;
+    --text: #f0ece4;
+    --muted: #8a8680;
+    --card-radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+  .logo span { color: var(--accent2); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .nav-tab.active { background: var(--accent); color: #000; }
+  .nav-tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
+
+  .page { display: none; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  .page-title { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem; }
+  .page-title span { color: var(--accent); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--card-radius); padding: 1.25rem;
+  }
+  .card-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.5rem; }
+  .card-value { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 700; }
+  .card-value.green { color: var(--green); }
+  .card-value.red { color: var(--red); }
+  .card-value.accent { color: var(--accent); }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .section-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; margin-top: 1.5rem; }
+
+  .chart-wrap { position: relative; width: 100%; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: rgba(76,175,125,0.15); color: var(--green); }
+  .badge-red { background: rgba(232,85,85,0.15); color: var(--red); }
+  .badge-amber { background: rgba(245,166,35,0.15); color: var(--accent); }
+
+  .input-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1rem; }
+  .input-group { display: flex; flex-direction: column; gap: 4px; }
+  .input-group label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  input[type=text], input[type=number], select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif;
+    outline: none; transition: border 0.15s; min-width: 120px;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  .btn {
+    padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    border: none; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-accent { background: var(--accent); color: #000; }
+  .btn-accent:hover { background: #e8971a; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(232,85,85,0.15); color: var(--red); border: 1px solid rgba(232,85,85,0.3); }
+  .btn-danger:hover { background: rgba(232,85,85,0.25); }
+
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  .pizza-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .pizza-name { font-weight: 500; font-size: 14px; }
+  .pizza-bar-wrap { flex: 1; margin: 0 16px; }
+  .pizza-bar { height: 6px; border-radius: 3px; background: var(--accent); transition: width 0.4s; }
+  .pizza-stat { font-size: 13px; color: var(--muted); min-width: 80px; text-align: right; }
+
+  .price-sim { background: linear-gradient(135deg, rgba(245,166,35,0.08), rgba(232,71,30,0.08)); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 1.5rem; }
+  .sim-result { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 700; color: var(--green); margin: 0.5rem 0; }
+
+  .inventory-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .inv-name { flex: 1; font-size: 14px; }
+  .inv-stock { font-size: 13px; font-weight: 500; min-width: 60px; text-align: right; }
+  .stock-bar-wrap { width: 100px; }
+  .stock-bar { height: 5px; border-radius: 3px; }
+
+  .kot-entry { background: var(--surface2); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .kot-num { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--accent); min-width: 40px; }
+  .kot-details { flex: 1; font-size: 13px; }
+  .kot-amount { font-weight: 600; font-size: 15px; color: var(--green); }
+
+  .monthly-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .month-label { font-size: 13px; color: var(--muted); min-width: 32px; }
+  .month-bar-wrap { flex: 1; }
+  .month-bar { height: 22px; border-radius: 4px; background: var(--accent); display: flex; align-items: center; padding-left: 8px; font-size: 12px; font-weight: 600; color: #000; transition: width 0.6s; min-width: 40px; }
+  .month-val { min-width: 80px; text-align: right; font-size: 13px; }
+
+  .tab-switch { display: flex; gap: 4px; background: var(--surface2); padding: 4px; border-radius: 10px; width: fit-content; margin-bottom: 1rem; }
+  .tab-btn { padding: 6px 16px; border-radius: 7px; font-size: 12px; font-weight: 500; border: none; background: transparent; color: var(--muted); cursor: pointer; }
+  .tab-btn.active { background: var(--surface); color: var(--text); }
+
+  @media (max-width: 700px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .nav-tabs { gap: 2px; }
+    .nav-tab { padding: 6px 10px; font-size: 11px; }
+    .topbar { padding: 0 1rem; }
+    .page { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Pizza<span>Biz</span> Manager</div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('sales')">Total Sales</button>
+    <button class="nav-tab" onclick="showPage('daywise')">Daily Sales Update</button>
+    <button class="nav-tab" onclick="showPage('monthly')">Monthly Sales</button>
+    <button class="nav-tab" onclick="showPage('finance')">Finance</button>
+    <button class="nav-tab" onclick="showPage('inventory')">Inventory</button>
+    <button class="nav-tab" onclick="showPage('kot')">KOT</button>
+    <button class="nav-tab" onclick="showPage('pricesim')">Price Sim</button>
+  </nav>
+</div>
+
+<!-- ======= SALES PAGE ======= -->
+<div id="page-sales" class="page active">
+  <div class="page-title">Total Sales vs <span>Pizza Sales</span></div>
+  <div class="grid-4" style="margin-bottom:1.5rem">
+    <div class="card"><div class="card-title">Total Revenue Today</div><div class="card-value accent" id="s-total-rev">₹0</div><div class="card-sub">All items combined</div></div>
+    <div class="card"><div class="card-title">Pizza Revenue</div><div class="card-value" id="s-pizza-rev">₹0</div><div class="card-sub">Pizza items only</div></div>
+    <div class="card"><div class="card-title">Total Orders</div><div class="card-value" id="s-orders">0</div><div class="card-sub">KOTs today</div></div>
+    <div class="card"><div class="card-title">Best Seller</div><div class="card-value" style="font-size:1.1rem" id="s-best">—</div><div class="card-sub">By quantity</div></div>
+  </div>
+
+  <div class="section-title">Individual Pizza Sales</div>
+  <div class="card">
+    <div id="pizza-sales-list"></div>
+  </div>
+
+  <div class="section-title" style="margin-top:1.5rem">Sales Chart</div>
+  <div class="card">
+    <div class="chart-wrap" style="height:260px"><canvas id="salesChart" role="img" aria-label="Bar chart comparing sales by pizza type">Sales by pizza type.</canvas></div>
+  </div>
+</div>
+
+<!-- ======= DAY WISE PAGE ======= -->
+<div id="page-daywise" class="page">
+  <div class="page-title">Daily Sales Update<span>Sales</span></div>
+
+  <div class="section-title">Add / Update Today's Sales</div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="input-row">
+      <div class="input-group"><label>Date</label><input type="text" id="dw-date" placeholder="dd-mm-yyyy"></div>
+      <div class="input-group"><label>Day</label>
+        <select id="dw-day">
+          <option>Sun</option><option>Mon</option><option>Tue</option><option>Wed</option>
+          <option>Thu</option><option>Fri</option><option>Sat</option>
+         </select>
+      </div>
+      <div class="input-group"><label>Pizza Type</label>
+        <select id="dw-pizza">
+          <option>Chicken Peri Peri</option><option>Chicken Tikka</option><option>Siracha Honey Chicken</option>
+          <option>BBQ Chicken</option><option>Spicy Chicken & Jalapeno</option><option>Teriyaki Chicken</option>
+		      <option>Chicken Sausage</option><option>Carpicciosa</option><option>Fully loaded</option>
+          <option>Auro House Special</option><option>Chicken 4 Stage</option><option>Classic Margheritta</option>
+		      <option>Spicy Funghi</option><option>Panner Tikka</option><option>Veggie Supreme</option>
+          <option>Mexican Nachos</option><option>BBQ Pineapple</option><option>4 Cheese Pizza</option>
+		      <option>Italiano</option><option>Auro's Pizza</option><option>Teriyaki Panner</option>
+          <option>Veg 2 Stage</option>
+        </select>
+      </div>
+      <div class="input-group"><label>Pizza Size</label>
+        <select id="dw-size">
+          <option>Small</option><option>Medium</option><option>Large</option>
+          <option>Grand</option>
+        </select>
+      </div>
+      <div class="input-group"><label>Qty Sold</label><input type="number" id="dw-qty" min="0" placeholder="0" style="width:80px"></div>
+      <div class="input-group"><label>Price (₹)</label><input type="number" id="dw-price" min="0" placeholder="0" style="width:90px"></div>
+      <button class="btn btn-accent" onclick="addDayEntry()" style="align-self:flex-end">+ Add</button>
+    </div>
+  </div>
+
+  <div class="section-title">Day Summary</div>
+  <div class="card" style="margin-bottom:1rem">
+    <table>
+      <thead><tr><th>Date</th><th>Pizza</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
+      <tbody id="dw-table"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Week at a Glance</div>
+  <div class="card">
+    <div class="chart-wrap" style="height:260px"><canvas id="dayChart" role="img" aria-label="Line chart of daily sales">Daily sales this week.</canvas></div>
+  </div>
+</div>
+
+<!-- ======= MONTHLY PAGE ======= -->
+<div id="page-monthly" class="page">
+  <div class="page-title">Monthly Sales <span>Tracker</span></div>
+  <div class="grid-3" style="margin-bottom:1.5rem">
+    <div class="card"><div class="card-title">This Month</div><div class="card-value accent" id="m-this">₹0</div></div>
+    <div class="card"><div class="card-title">Last Month</div><div class="card-value" id="m-last">₹0</div></div>
+    <div class="card"><div class="card-title">Growth</div><div class="card-value green" id="m-growth">0%</div></div>
+  </div>
+
+  <div class="section-title">Enter Monthly Revenue</div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="input-row">
+      <div class="input-group"><label>Month</label>
+        <select id="m-month">
+          <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+          <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+          <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
+        </select>
+      </div>
+      <div class="input-group"><label>Revenue (₹)</label><input type="number" id="m-revenue" placeholder="0"></div>
+      <button class="btn btn-accent" onclick="setMonthly()" style="align-self:flex-end">Set</button>
+    </div>
+  </div>
+
+  <div class="section-title">12-Month Revenue</div>
+  <div class="card" id="monthly-bars"></div>
+</div>
+
+<!-- ======= FINANCE PAGE ======= -->
+<div id="page-finance" class="page">
+  <div class="page-title">Expenses, Income &amp; <span>Profit</span></div>
+  <div class="grid-4" style="margin-bottom:1.5rem">
+    <div class="card"><div class="card-title">Total Income</div><div class="card-value green" id="f-income">₹0</div></div>
+    <div class="card"><div class="card-title">Total Expenses</div><div class="card-value red" id="f-expense">₹0</div></div>
+    <div class="card"><div class="card-title">Net Profit</div><div class="card-value accent" id="f-profit">₹0</div></div>
+    <div class="card"><div class="card-title">Profit Margin</div><div class="card-value" id="f-margin">0%</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="section-title">Add Income</div>
+      <div class="card">
+        <div class="input-group" style="margin-bottom:10px"><label>Source</label><input type="text" id="fi-source" placeholder="e.g. Dine-in, Swiggy" style="width:100%"></div>
+        <div class="input-group" style="margin-bottom:10px"><label>Amount (₹)</label><input type="number" id="fi-amount" placeholder="0" style="width:100%"></div>
+        <button class="btn btn-accent" onclick="addIncome()" style="width:100%">+ Add Income</button>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Add Expense</div>
+      <div class="card">
+        <div class="input-group" style="margin-bottom:10px"><label>Category</label>
+          <select id="fe-cat" style="width:100%">
+            <option>Raw Materials</option><option>Staff Salary</option><option>Rent</option>
+            <option>Electricity</option><option>Gas/Fuel</option><option>Packaging</option><option>Other</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:10px"><label>Amount (₹)</label><input type="number" id="fe-amount" placeholder="0" style="width:100%"></div>
+        <button class="btn btn-danger" onclick="addExpense()" style="width:100%">+ Add Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Transactions</div>
+  <div class="tab-switch">
+    <button class="tab-btn active" onclick="switchFinTab('all',this)">All</button>
+    <button class="tab-btn" onclick="switchFinTab('income',this)">Income</button>
+    <button class="tab-btn" onclick="switchFinTab('expense',this)">Expenses</button>
+  </div>
+  <div class="card" style="margin-bottom:1.5rem">
+    <table><thead><tr><th>Type</th><th>Source / Category</th><th>Amount</th></tr></thead>
+    <tbody id="fin-table"></tbody></table>
+  </div>
+
+  <div class="section-title">Income vs Expense</div>
+  <div class="card">
+    <div class="chart-wrap" style="height:260px"><canvas id="finChart" role="img" aria-label="Doughnut chart showing income vs expenses">Income vs Expenses.</canvas></div>
+  </div>
+</div>
+
+<!-- ======= INVENTORY PAGE ======= -->
+<div id="page-inventory" class="page">
+  <div class="page-title">Inventory <span>Tracker</span></div>
+  <div class="grid-3" style="margin-bottom:1.5rem">
+    <div class="card"><div class="card-title">Total Items</div><div class="card-value" id="inv-count">0</div></div>
+    <div class="card"><div class="card-title">Low Stock Items</div><div class="card-value red" id="inv-low">0</div></div>
+    <div class="card"><div class="card-title">Inventory Value</div><div class="card-value accent" id="inv-value">₹0</div></div>
+  </div>
+
+  <div class="section-title">Add / Update Item</div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="input-row">
+      <div class="input-group"><label>Item Name</label><input type="text" id="inv-name" placeholder="e.g. Cheese 1kg"></div>
+      <div class="input-group"><label>Stock (units)</label><input type="number" id="inv-stock" min="0" placeholder="0" style="width:90px"></div>
+      <div class="input-group"><label>Min Stock</label><input type="number" id="inv-min" min="0" placeholder="5" style="width:80px"></div>
+      <div class="input-group"><label>Unit Cost (₹)</label><input type="number" id="inv-cost" min="0" placeholder="0" style="width:90px"></div>
+      <button class="btn btn-accent" onclick="addInventory()" style="align-self:flex-end">+ Add</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Item</th><th>Stock</th><th>Min</th><th>Unit Cost</th><th>Value</th><th>Status</th><th></th></tr></thead>
+      <tbody id="inv-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ======= KOT PAGE ======= -->
+<div id="page-kot" class="page">
+  <div class="page-title">KOT — Daily <span>Order Log</span></div>
+  <div class="grid-4" style="margin-bottom:1.5rem">
+    <div class="card"><div class="card-title">Total KOTs Today</div><div class="card-value accent" id="kot-count">0</div></div>
+    <div class="card"><div class="card-title">Total Revenue</div><div class="card-value green" id="kot-revenue">₹0</div></div>
+    <div class="card"><div class="card-title">Avg Order Value</div><div class="card-value" id="kot-avg">₹0</div></div>
+    <div class="card"><div class="card-title">Pending KOTs</div><div class="card-value red" id="kot-pending">0</div></div>
+  </div>
+
+  <div class="section-title">Add New KOT</div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="input-row">
+      <div class="input-group"><label>Table / Order No.</label><input type="text" id="kot-table" placeholder="T1 / Swiggy #2" style="width:130px"></div>
+      <div class="input-group"><label>Items Ordered</label><input type="text" id="kot-items" placeholder="2x Pepperoni, 1x Veg" style="width:220px"></div>
+      <div class="input-group"><label>Amount (₹)</label><input type="number" id="kot-amount" placeholder="0" style="width:100px"></div>
+      <div class="input-group"><label>Status</label>
+        <select id="kot-status">
+          <option>Pending</option><option>Served</option><option>Paid</option>
+        </select>
+      </div>
+      <button class="btn btn-accent" onclick="addKOT()" style="align-self:flex-end">+ Add KOT</button>
+    </div>
+  </div>
+
+  <div class="section-title">Today's KOTs</div>
+  <div id="kot-list"></div>
+</div>
+
+<!-- ======= PRICE SIMULATION PAGE ======= -->
+<div id="page-pricesim" class="page">
+  <div class="page-title">Price Change <span>Simulator</span></div>
+  <p style="color:var(--muted); margin-bottom:1.5rem; font-size:14px">See how a price change affects your revenue — without touching actual records.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="section-title">Configure Simulation</div>
+      <div class="card price-sim">
+        <div class="input-group" style="margin-bottom:14px"><label>Pizza Type</label>
+          <select id="ps-pizza" style="width:100%">
+            <option>Margherita</option><option>Pepperoni</option><option>Farmhouse</option>
+            <option>BBQ Chicken</option><option>Paneer Tikka</option><option>Veg Loaded</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:14px"><label>Current Price (₹)</label><input type="number" id="ps-curr" placeholder="299" style="width:100%"></div>
+        <div class="input-group" style="margin-bottom:14px"><label>New Price (₹)</label><input type="number" id="ps-new" placeholder="349" style="width:100%"></div>
+        <div class="input-group" style="margin-bottom:14px"><label>Avg Daily Units Sold</label><input type="number" id="ps-qty" placeholder="30" style="width:100%"></div>
+        <div class="input-group" style="margin-bottom:14px"><label>Demand Drop Estimate (%)</label><input type="number" id="ps-drop" placeholder="10" min="0" max="100" style="width:100%"></div>
+        <button class="btn btn-accent" onclick="runSimulation()" style="width:100%">Run Simulation</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Simulation Results</div>
+      <div id="sim-results" class="card" style="min-height:320px; display:flex; flex-direction:column; justify-content:center; align-items:center; color:var(--muted); font-size:14px">
+        Enter values and click <strong>Run Simulation</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Revenue Comparison</div>
+  <div class="card">
+    <div class="chart-wrap" style="height:260px"><canvas id="simChart" role="img" aria-label="Bar chart comparing current vs new revenue">Current vs projected revenue.</canvas></div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let pizzaPrices = { Margherita:199, Pepperoni:299, Farmhouse:249, "BBQ Chicken":349, "Paneer Tikka":279, "Veg Loaded":229 };
+let pizzaSales = { Margherita:24, Pepperoni:18, Farmhouse:12, "BBQ Chicken":9, "Paneer Tikka":15, "Veg Loaded":21 };
+let dayEntries = [];
+let monthlyData = [88000,92000,76000,105000,118000,98000,112000,95000,108000,122000,131000,0];
+let transactions = [];
+let inventory = [
+  {name:"Cheese 1kg", stock:12, min:5, cost:320},
+  {name:"Tomato Sauce", stock:3, min:4, cost:85},
+  {name:"Flour 5kg", stock:8, min:3, cost:210},
+  {name:"Pepperoni 500g", stock:6, min:4, cost:450},
+  {name:"Onions 5kg", stock:15, min:3, cost:120},
+  {name:"Capsicum 1kg", stock:4, min:2, cost:95},
+  {name:"Paneer 500g", stock:2, min:3, cost:180}
+];
+let kots = [];
+let kotCounter = 1;
+let finTab = 'all';
+let charts = {};
+
+// ===== NAV =====
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if(id==='sales') renderSales();
+  if(id==='daywise') renderDayWise();
+  if(id==='monthly') renderMonthly();
+  if(id==='finance') renderFinance();
+  if(id==='inventory') renderInventory();
+  if(id==='kot') renderKOT();
+}
+
+// ===== UTILS =====
+function fmt(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+function today() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+}
+function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ===== SALES PAGE =====
+function renderSales() {
+  const pizzaNames = Object.keys(pizzaSales);
+  const totalPizzaRev = pizzaNames.reduce((s,k) => s + pizzaSales[k] * pizzaPrices[k], 0);
+  const totalRev = totalPizzaRev + 4200; // drinks/sides
+  const totalOrders = Object.values(pizzaSales).reduce((a,b) => a+b, 0);
+  const best = pizzaNames.reduce((a,b) => pizzaSales[a] > pizzaSales[b] ? a : b);
+
+  document.getElementById('s-total-rev').textContent = fmt(totalRev);
+  document.getElementById('s-pizza-rev').textContent = fmt(totalPizzaRev);
+  document.getElementById('s-orders').textContent = totalOrders;
+  document.getElementById('s-best').textContent = best;
+
+  const maxSale = Math.max(...Object.values(pizzaSales));
+  const listEl = document.getElementById('pizza-sales-list');
+  listEl.innerHTML = pizzaNames.map(name => {
+    const pct = Math.round((pizzaSales[name]/maxSale)*100);
+    const rev = pizzaSales[name] * pizzaPrices[name];
+    return `<div class="pizza-item">
+      <div class="pizza-name">${name}</div>
+      <div class="pizza-bar-wrap"><div class="pizza-bar" style="width:${pct}%"></div></div>
+      <div class="pizza-stat">${pizzaSales[name]} sold · ${fmt(rev)}</div>
+    </div>`;
+  }).join('');
+
+  destroyChart('salesChart');
+  charts['salesChart'] = new Chart(document.getElementById('salesChart'), {
+    type: 'bar',
+    data: {
+      labels: pizzaNames,
+      datasets: [
+        { label: 'Qty Sold', data: Object.values(pizzaSales), backgroundColor: '#f5a623cc', borderRadius: 6 },
+        { label: 'Revenue (₹00s)', data: pizzaNames.map(k => Math.round(pizzaSales[k]*pizzaPrices[k]/100)), backgroundColor: '#e8471ecc', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8a8680', font: { size: 12 } } } },
+      scales: { x: { ticks: { color: '#8a8680' }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#8a8680' }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+    }
+  });
+}
+
+// ===== DAY WISE =====
+function addDayEntry() {
+  const date = document.getElementById('dw-date').value || today();
+  const pizza = document.getElementById('dw-pizza').value;
+  const size = document.getElementById('dw-size').value;
+  const qty = parseInt(document.getElementById('dw-qty').value) || 0;
+  const price = parseFloat(document.getElementById('dw-price').value) || pizzaPrices[pizza];
+  if(!qty) return alert('Please enter quantity');
+  dayEntries.push({ date, pizza, size, qty, price });
+  pizzaSales[pizza] = (pizzaSales[pizza] || 0) + qty;
+  document.getElementById('dw-qty').value = '';
+  renderDayWise();
+}
+
+function renderDayWise() {
+  const tbody = document.getElementById('dw-table');
+  if(!dayEntries.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No entries yet</td></tr>'; }
+  else {
+    tbody.innerHTML = dayEntries.map((e,i) => `<tr>
+      <td>${e.date}</td><td>${e.pizza}</td><td>${e.qty}</td>
+      <td>${fmt(e.price)}</td><td>${fmt(e.qty*e.price)}</td>
+      <td><button class="btn btn-danger" style="padding:3px 10px;font-size:11px" onclick="delDay(${i})">Del</button></td>
+    </tr>`).join('');
+  }
+
+  // Aggregate by date
+  const byDate = {};
+  dayEntries.forEach(e => { byDate[e.date] = (byDate[e.date]||0) + e.qty*e.price; });
+  const dates = Object.keys(byDate).slice(-7);
+  const vals = dates.map(d => byDate[d]);
+
+  destroyChart('dayChart');
+  charts['dayChart'] = new Chart(document.getElementById('dayChart'), {
+    type: 'line',
+    data: {
+      labels: dates.length ? dates : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [{ label: 'Daily Revenue', data: vals.length ? vals : [8200,9400,7800,11200,13500,16800,12400], borderColor: '#f5a623', backgroundColor: 'rgba(245,166,35,0.12)', fill: true, tension: 0.4, pointBackgroundColor: '#f5a623' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8a8680' }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#8a8680', callback: v => '₹'+v.toLocaleString('en-IN') }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
+}
+
+function delDay(i) { dayEntries.splice(i, 1); renderDayWise(); }
+
+// ===== MONTHLY =====
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function setMonthly() {
+  const m = months.indexOf(document.getElementById('m-month').value);
+  const v = parseFloat(document.getElementById('m-revenue').value) || 0;
+  monthlyData[m] = v;
+  renderMonthly();
+}
+
+function renderMonthly() {
+  const thisM = new Date().getMonth();
+  const lastM = (thisM - 1 + 12) % 12;
+  document.getElementById('m-this').textContent = fmt(monthlyData[thisM]);
+  document.getElementById('m-last').textContent = fmt(monthlyData[lastM]);
+  const growth = monthlyData[lastM] ? Math.round(((monthlyData[thisM]-monthlyData[lastM])/monthlyData[lastM])*100) : 0;
+  const gEl = document.getElementById('m-growth');
+  gEl.textContent = (growth >= 0 ? '+' : '') + growth + '%';
+  gEl.className = 'card-value ' + (growth >= 0 ? 'green' : 'red');
+
+  const maxVal = Math.max(...monthlyData, 1);
+  const barsEl = document.getElementById('monthly-bars');
+  barsEl.innerHTML = months.map((m,i) => {
+    const pct = Math.round((monthlyData[i]/maxVal)*100);
+    return `<div class="monthly-bar-row">
+      <div class="month-label">${m}</div>
+      <div class="month-bar-wrap"><div class="month-bar" style="width:${Math.max(pct,3)}%">${monthlyData[i] ? '' : ''}</div></div>
+      <div class="month-val">${monthlyData[i] ? fmt(monthlyData[i]) : '<span style="color:var(--muted)">—</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== FINANCE =====
+function addIncome() {
+  const src = document.getElementById('fi-source').value || 'Other';
+  const amt = parseFloat(document.getElementById('fi-amount').value) || 0;
+  if(!amt) return alert('Enter amount');
+  transactions.push({ type:'income', label: src, amount: amt });
+  document.getElementById('fi-source').value = '';
+  document.getElementById('fi-amount').value = '';
+  renderFinance();
+}
+function addExpense() {
+  const cat = document.getElementById('fe-cat').value;
+  const amt = parseFloat(document.getElementById('fe-amount').value) || 0;
+  if(!amt) return alert('Enter amount');
+  transactions.push({ type:'expense', label: cat, amount: amt });
+  document.getElementById('fe-amount').value = '';
+  renderFinance();
+}
+function switchFinTab(tab, el) {
+  finTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderFinance();
+}
+function renderFinance() {
+  const income = transactions.filter(t => t.type==='income').reduce((s,t) => s+t.amount, 0);
+  const expense = transactions.filter(t => t.type==='expense').reduce((s,t) => s+t.amount, 0);
+  const profit = income - expense;
+  const margin = income ? Math.round((profit/income)*100) : 0;
+
+  document.getElementById('f-income').textContent = fmt(income);
+  document.getElementById('f-expense').textContent = fmt(expense);
+  document.getElementById('f-profit').textContent = fmt(profit);
+  document.getElementById('f-profit').className = 'card-value ' + (profit >= 0 ? 'accent' : 'red');
+  document.getElementById('f-margin').textContent = margin + '%';
+
+  const rows = transactions.filter(t => finTab==='all' || t.type===finTab);
+  const tbody = document.getElementById('fin-table');
+  if(!rows.length) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted);text-align:center;padding:20px">No transactions yet</td></tr>'; }
+  else {
+    tbody.innerHTML = rows.map(t => `<tr>
+      <td><span class="badge ${t.type==='income'?'badge-green':'badge-red'}">${t.type}</span></td>
+      <td>${t.label}</td><td style="font-weight:500">${fmt(t.amount)}</td>
+    </tr>`).join('');
+  }
+
+  destroyChart('finChart');
+  charts['finChart'] = new Chart(document.getElementById('finChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Income','Expenses'],
+      datasets: [{ data: [income || 1, expense || 1], backgroundColor: ['#4caf7dcc','#e85555cc'], borderColor: '#1a1916', borderWidth: 3, hoverOffset: 6 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8a8680' } } } }
+  });
+}
+
+// ===== INVENTORY =====
+function addInventory() {
+  const name = document.getElementById('inv-name').value;
+  const stock = parseInt(document.getElementById('inv-stock').value) || 0;
+  const min = parseInt(document.getElementById('inv-min').value) || 5;
+  const cost = parseFloat(document.getElementById('inv-cost').value) || 0;
+  if(!name) return alert('Enter item name');
+  const idx = inventory.findIndex(i => i.name.toLowerCase() === name.toLowerCase());
+  if(idx >= 0) { inventory[idx].stock = stock; inventory[idx].min = min; inventory[idx].cost = cost; }
+  else inventory.push({ name, stock, min, cost });
+  document.getElementById('inv-name').value = '';
+  document.getElementById('inv-stock').value = '';
+  document.getElementById('inv-cost').value = '';
+  renderInventory();
+}
+function renderInventory() {
+  const low = inventory.filter(i => i.stock <= i.min).length;
+  const totalVal = inventory.reduce((s,i) => s + i.stock*i.cost, 0);
+  document.getElementById('inv-count').textContent = inventory.length;
+  document.getElementById('inv-low').textContent = low;
+  document.getElementById('inv-value').textContent = fmt(totalVal);
+
+  const maxStock = Math.max(...inventory.map(i => i.stock), 1);
+  const tbody = document.getElementById('inv-table');
+  tbody.innerHTML = inventory.map((item,idx) => {
+    const pct = Math.round((item.stock/maxStock)*100);
+    const isLow = item.stock <= item.min;
+    const barColor = isLow ? '#e85555' : item.stock <= item.min*1.5 ? '#f5a623' : '#4caf7d';
+    return `<tr>
+      <td>${item.name}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div style="width:80px;height:5px;border-radius:3px;background:var(--surface2)"><div style="width:${pct}%;height:5px;border-radius:3px;background:${barColor}"></div></div>
+        <span style="font-size:13px">${item.stock}</span>
+      </div></td>
+      <td>${item.min}</td><td>${fmt(item.cost)}</td><td>${fmt(item.stock*item.cost)}</td>
+      <td><span class="badge ${isLow?'badge-red':'badge-green'}">${isLow?'Low Stock':'OK'}</span></td>
+      <td><button class="btn btn-danger" style="padding:3px 10px;font-size:11px" onclick="delInv(${idx})">Del</button></td>
+    </tr>`;
+  }).join('');
+}
+function delInv(i) { inventory.splice(i,1); renderInventory(); }
+
+// ===== KOT =====
+function addKOT() {
+  const table = document.getElementById('kot-table').value || 'T1';
+  const items = document.getElementById('kot-items').value || '—';
+  const amount = parseFloat(document.getElementById('kot-amount').value) || 0;
+  const status = document.getElementById('kot-status').value;
+  if(!amount) return alert('Enter KOT amount');
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+  kots.unshift({ num: kotCounter++, table, items, amount, status, time });
+  document.getElementById('kot-table').value = '';
+  document.getElementById('kot-items').value = '';
+  document.getElementById('kot-amount').value = '';
+  renderKOT();
+}
+function updateKOTStatus(i, val) { kots[i].status = val; renderKOT(); }
+function renderKOT() {
+  const total = kots.reduce((s,k) => s+k.amount, 0);
+  const pending = kots.filter(k => k.status==='Pending').length;
+  document.getElementById('kot-count').textContent = kots.length;
+  document.getElementById('kot-revenue').textContent = fmt(total);
+  document.getElementById('kot-avg').textContent = kots.length ? fmt(Math.round(total/kots.length)) : '₹0';
+  document.getElementById('kot-pending').textContent = pending;
+
+  const listEl = document.getElementById('kot-list');
+  if(!kots.length) { listEl.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;font-size:14px">No KOTs today. Add your first order!</div>'; return; }
+  listEl.innerHTML = kots.map((k,i) => {
+    const badgeClass = k.status==='Paid' ? 'badge-green' : k.status==='Served' ? 'badge-amber' : 'badge-red';
+    return `<div class="kot-entry">
+      <div class="kot-num">#${k.num}</div>
+      <div class="kot-details">
+        <div style="font-weight:500;margin-bottom:2px">${k.table} <span style="color:var(--muted);font-size:12px">· ${k.time}</span></div>
+        <div style="color:var(--muted);font-size:12px">${k.items}</div>
+      </div>
+      <div class="kot-amount">${fmt(k.amount)}</div>
+      <select class="badge ${badgeClass}" style="border:none;cursor:pointer;font-size:11px;padding:4px 8px;border-radius:20px;font-weight:500" onchange="updateKOTStatus(${i},this.value)">
+        <option ${k.status==='Pending'?'selected':''}>Pending</option>
+        <option ${k.status==='Served'?'selected':''}>Served</option>
+        <option ${k.status==='Paid'?'selected':''}>Paid</option>
+      </select>
+    </div>`;
+  }).join('');
+}
+
+// ===== PRICE SIMULATION =====
+let simChartInst = null;
+function runSimulation() {
+  const pizza = document.getElementById('ps-pizza').value;
+  const currPrice = parseFloat(document.getElementById('ps-curr').value) || pizzaPrices[pizza];
+  const newPrice = parseFloat(document.getElementById('ps-new').value);
+  const baseQty = parseInt(document.getElementById('ps-qty').value) || 30;
+  const demandDrop = parseFloat(document.getElementById('ps-drop').value) || 0;
+  if(!newPrice) return alert('Enter new price');
+
+  const newQty = Math.round(baseQty * (1 - demandDrop/100));
+  const currRev = currPrice * baseQty;
+  const newRev = newPrice * newQty;
+  const diff = newRev - currRev;
+  const diffPct = Math.round((diff/currRev)*100);
+  const dailyGain = diff;
+  const monthlyGain = diff * 30;
+
+  const resultsEl = document.getElementById('sim-results');
+  resultsEl.innerHTML = `
+    <div style="width:100%">
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${pizza} · Daily Revenue Change</div>
+      <div class="sim-result" style="color:${diff>=0?'var(--green)':'var(--red)'}">${diff>=0?'+':''}${fmt(diff)} <span style="font-size:1rem">(${diffPct>0?'+':''}${diffPct}%)</span></div>
+      <div class="divider"></div>
+      <div class="grid-2" style="gap:12px;margin-top:.5rem">
+        <div class="card" style="background:var(--surface2)"><div class="card-title">Current Setup</div><div style="font-size:15px;margin:4px 0">${fmt(currPrice)} × ${baseQty} units</div><div class="card-value accent">${fmt(currRev)}/day</div></div>
+        <div class="card" style="background:var(--surface2)"><div class="card-title">New Setup</div><div style="font-size:15px;margin:4px 0">${fmt(newPrice)} × ${newQty} units</div><div class="card-value ${diff>=0?'green':'red'}">${fmt(newRev)}/day</div></div>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:10px;display:flex;gap:20px;font-size:14px">
+        <div><div style="color:var(--muted);font-size:11px;margin-bottom:2px">MONTHLY GAIN/LOSS</div><strong style="color:${monthlyGain>=0?'var(--green)':'var(--red)'}">${monthlyGain>=0?'+':''}${fmt(monthlyGain)}</strong></div>
+        <div><div style="color:var(--muted);font-size:11px;margin-bottom:2px">DEMAND DROP</div><strong>${demandDrop}% → ${newQty} units/day</strong></div>
+        <div><div style="color:var(--muted);font-size:11px;margin-bottom:2px">BREAKEVEN DROP</div><strong>${Math.round((1 - currRev/newPrice/baseQty)*100)}%</strong></div>
+      </div>
+    </div>`;
+
+  destroyChart('simChart');
+  charts['simChart'] = new Chart(document.getElementById('simChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Daily Revenue','Monthly Revenue'],
+      datasets: [
+        { label: 'Current Price', data: [currRev, currRev*30], backgroundColor: '#8a8680cc', borderRadius: 6 },
+        { label: 'New Price', data: [newRev, newRev*30], backgroundColor: diff>=0?'#4caf7dcc':'#e85555cc', borderRadius: 6 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8a8680' } } }, scales: { x: { ticks: { color: '#8a8680' }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#8a8680', callback: v => '₹'+v.toLocaleString('en-IN') }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
+}
+
+// ===== INIT =====
+document.getElementById('dw-date').value = today();
+renderSales();
+renderInventory();
+renderKOT();
+renderMonthly();
+renderFinance();
+</script>
+</body>
+</html>
